@@ -15,8 +15,8 @@ export const routes = [
         title,
         description,
         completed_at: null,
-        created_at: new Date(),
-        updated_at: new Date(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       }
       database.insert('tasks', task)
       return response.writeHead(201).end();
@@ -27,11 +27,29 @@ export const routes = [
     path: buildRoutePath('/tasks'),
     handler: (request, response) => {
       const { search } = request.query;
-      const users = database.select('users', search ? {
-        name: search,
-        email: search,
+      const tasks = database.select('tasks', search ? {
+        title: search,
+        description: search,
       } : null);
-      return response.end(JSON.stringify(users));
+      return response.end(JSON.stringify(tasks));
+    },
+  },
+  {
+    method: 'PUT',
+    path: buildRoutePath('/tasks/:id'),
+    handler: (request, response) => {
+      const { id } = request.params;
+      const { title, description } = request.body;
+      const tasks = database.select('tasks');
+      const findTask = tasks.find(task => task.id === id);
+      const updatedTask = {
+        ...findTask,
+        title: title ? title : findTask.title,
+        description: description ? description : findTask.description,
+        updated_at: new Date().toISOString(),
+      };
+      database.update('tasks', id, updatedTask);
+      return response.writeHead(204).end();
     },
   },
   {
@@ -40,19 +58,6 @@ export const routes = [
     handler: (request, response) => {
       const { id } = request.params;
       database.delete('users', id);
-      return response.writeHead(204).end();
-    },
-  },
-  {
-    method: 'PUT',
-    path: buildRoutePath('/tasks/:id'),
-    handler: (request, response) => {
-      const { id } = request.params;
-      const { name, email } = request.body;
-      database.update('users', id, {
-        name,
-        email,
-      });
       return response.writeHead(204).end();
     },
   },
